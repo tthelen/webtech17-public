@@ -27,17 +27,17 @@ class WikiApp(webserver.App):
     """
 
     def register_routes(self):
-        self.add_route("/?$", self.show)
-        self.add_route("show(/(?P<pagename>\w+))?$", self.show)
-        self.add_route("edit/(?P<pagename>\w+)$", self.edit)
-        self.add_route("save/(?P<pagename>\w+)$", self.save)
+        self.add_route("", self.show)
+        self.add_route("show(/(?P<pagename>\w+))?", self.show)
+        self.add_route("edit/(?P<pagename>\w+)", self.edit)
+        self.add_route("save/(?P<pagename>\w+)", self.save)
 
     def read_page(self, pagename):
         """Read wiki page from data directory or raise NoSuchPageError."""
 
         try:
-            with open("data/"+pagename, "r", encoding="utf-8") as f:
-                x=f.read()
+            with open("data/"+pagename, "r", encoding="utf-8", newline='') as f:
+                x = f.read()
                 return x
         except IOError:
             raise NoSuchPageError
@@ -126,7 +126,7 @@ class WikiApp(webserver.App):
             return
 
         # ok, save text
-        f = open("data/" + pagename, "w", encoding='utf-8')
+        f = open("data/" + pagename, "w", encoding='utf-8', newline='')
         f.write(wikitext)
         f.close()
 

@@ -297,10 +297,10 @@ class Webserver:
                     # processing (check registered routes for actions)
                     processed = False
                     for route in self.routes:
-                        log(2, "Matche %s gegen %s" % (route[0], self.request.resource))
-                        match = re.match(route[0], self.request.resource)
+                        log(2, "Matche %s gegen %s" % (route[0], self.request.path))
+                        match = re.match(route[0], self.request.path)
                         if match:
-                            log(2, "Route %s matcht Request %s" % (route[0], self.request.resource))
+                            log(2, "Route %s matcht Request %s" % (route[0], self.request.path))
                             route[1](self.request, self.response, match)
                             processed = True
                             break
