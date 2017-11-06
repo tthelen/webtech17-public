@@ -202,6 +202,11 @@ class Response:
         w("Connection: close\n")
         for key, value in self.headers.items():
             w("%s: %s\n" % (key, value))
+
+        # Addition: Set proper Content Length
+        if self.body and not 'Content-Length' in self.headers:
+            w("Content-Length: %d\n" % len(self.body))
+
         w("\n")  # extra leerzeile schliesst header ab
 
         if self.body:
