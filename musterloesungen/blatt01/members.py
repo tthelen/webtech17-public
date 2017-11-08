@@ -59,7 +59,7 @@ def write_html(fn, name, members):
             except TypeError as e:  # Aufgabe 3: List or object expected from Json data but something else found
                 raise WebTechError("Invalid type in json data ({})".format(e))
             f.write("</table>\n")
-    except IOError:  # Aufgabe 3: impossible to open file for writing
+    except IOError as e:  # Aufgabe 3: impossible to open file for writing
         raise WebTechError("Unable to open file {} for writing ({})".format(fn, e))
 
 

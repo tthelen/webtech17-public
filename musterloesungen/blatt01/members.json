@@ -1,6 +1,9 @@
 { "name": "Die Mitglieder",
   "members": [
-    { "firstname": "Tobias", "lastname": "Thelen", "githubname": "tthelen", "studipname": "tthelen" },
+    { "firstname": "Tobias",
+      "lastname": "Thelen",
+      "githubname": "tthelen",
+      "studipname": "tthelen" },
     { "firstname": "Franz", "lastname": "Mohr", "githubname": "raeuberfranz", "studipname": "frmohr" },
     { "firstname": "Meister", "lastname": "Eder", "githubname": "mucklschreiner", "studipname": "meder" }
   ]

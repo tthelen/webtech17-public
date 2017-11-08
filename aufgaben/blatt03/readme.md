@@ -69,7 +69,7 @@ Auf HTTP-Ebene bildet sich dieses Verfahren wie folgt ab:
 3. Der Server prüft nun, ob der aktuelle `ETag` der angeforderten Ressource mit dem im Request 
    übermittelten `ETags` übereinstimmt. Falls ja, antwortet er mit Status-Code `304 Not Modified` und 
    leerem Response-Body. (Hinweis: Im Standard sind auch mehrere Etags und "schwache Etags" vorgesehen, das muss
-   hier umgesetzt werden.)
+   hier nicht umgesetzt werden.)
    
 Eine Möglichkeit zur Berechnung des `ETag` ist es, einen kryptographischen Hashwert aus dem fertig generierten 
 Response-Body zu berechnen. In Python können dafür Klassen aus der `hashlib`-Bibliothek verwendet werden, 
