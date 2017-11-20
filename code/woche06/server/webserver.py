@@ -35,6 +35,11 @@ class StopProcessing(Exception):
         """
         return "[%d] %s" % (self.code, self.reason)
 
+class AlreadyProcessed(Exception):
+    """
+    Stop processing request because middleware already handled it. Response is ready to commit.
+    """
+    pass
 
 class App:
     """An app wraps web applications or reusable components for
@@ -417,21 +422,23 @@ class Webserver:
                             processed = True
                             break
 
-                    # preprocessing (middlewares)
-                    for m in self.middlewares:
-                        m.process_response(self.response)
-
                     if not processed:
                         raise StopProcessing(404, "No matching route.")
 
                 except StopProcessing as spe:
                     self.response.send(code=spe.code, body=spe.reason)
+                except AlreadyProcessed:
+                    pass
 
-            # actually write response to server connection
-            try:
-                self.response.commit()
-            except ConnectionAbortedError:
-                pass
+                # process middlewares after handling StopProcessing
+                for m in self.middlewares:
+                    m.process_response(self.response)
+
+                # actually write response to server connection
+                try:
+                    self.response.commit()
+                except ConnectionAbortedError:
+                    pass
 
             conn.close()
             csock.close()
