@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+
+<div><div style="display:block" onclick="$(this.nextElementSibling).toggle();">[Mehr...]</div>
+    <div style="display:none" onclick="this.parentNode.childNodes.forEach(function (e) { console.log(e); e.style.display = (e.style.display=='block'?'block':'block')}); return false;">
+        [Weniger...]
+    </div>
+    <div style="display:none">Ein erfolgreich abgeschlossenes BA-Studium Germanistik ist grundsätzlich nicht mit einer konkreten Berufsausbildung zu vergleichen. Zwar werden in einem
+        solchen Studium Fachkompetenzen erlernt, die auch für eine Tätigkeit im journalistischen oder schriftstellerischen Bereich zentral sind (hohe Sprachkompetenzen, Recherchekompetenzen etc.),
+        es handelt sich dabei trotzdem nicht um eine Berufsqualifikation. Während ihres Studiums sollten sie versuchen, sich (durch Praktika, Volontariate u. Ä.) Einblicke in Berufsfelder zu verschaffen,
+        die Ihnen interessant erscheinen. In vielen Fällen, wenn sie z.B. Lehrer oder Lehrerin werden wollen, schließt sich an das BA-Studium Germanistik ein Masterstudium an.
+    </div>
+</div>
+</body>
+</html>

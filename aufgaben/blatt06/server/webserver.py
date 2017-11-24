@@ -349,7 +349,7 @@ class Webserver:
         self.response = None
         self.templating = "python_templates" # default template engine
         self.templating_path = "templates"
-        self.templating_available = ["python_templates", "jinja2", "pystache"]
+        self.templating_available = ["python_templates", "python_format", "jinja2", "pystache"]
 
     def set_templating(self, templating):
         if templating in self.templating_available:

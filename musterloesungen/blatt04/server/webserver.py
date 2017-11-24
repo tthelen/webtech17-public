@@ -10,7 +10,6 @@ webserver.py
 
 import socket, re, os
 from server.log import log
-from string import Template
 
 
 class StopProcessing(Exception):
@@ -34,12 +33,6 @@ class StopProcessing(Exception):
         :return: Displayable string with code and reason
         """
         return "[%d] %s" % (self.code, self.reason)
-
-class AlreadyProcessed(Exception):
-    """
-    Stop processing request because middleware already handled it. Response is ready to commit.
-    """
-    pass
 
 
 class App:
@@ -84,72 +77,6 @@ class App:
 
     def register_routes(self):
         pass
-
-
-class Middleware:
-
-    def __init__(self):
-        pass
-
-    def process_request(self, request, response):
-        pass
-
-    def process_response(self, response):
-        pass
-
-
-class Cookie:
-    """Data for single Cookie."""
-
-    def __init__(self, name, value, secure=False, httpOnly=False, **kwargs):
-        """Construct Cookie from python data"""
-        self.name = name
-        self.value = value
-        self.httpOnly = httpOnly
-        self.secure = secure
-        self.attrkeys = ['Comment', 'Domain', 'Max-Age', 'Path', 'Expires']
-        self.attrs = {}
-        for attr in self.attrkeys:
-            pyattr = attr.replace('-','_').lower()
-            self.attrs[attr] = kwargs[pyattr] if pyattr in kwargs else ''
-
-    @classmethod
-    def parse(cls, cookie):
-        """Construct Cookie from HTTP Request Header data"""
-        pairs = map(lambda x: x.strip(),cookie.split(";"))
-        cookies = {}
-        for p in pairs:
-            [key, value] = p.split("=", 1)
-            cookies[key] = value
-        return cookies
-
-    def get_header(self):
-        """Build HTTP Response Header Representation."""
-        h = "Set-Cookie: %s=%s" % (self.name, self.value)
-        args = ";".join(["%s=%s" % (key, val) for (key, val) in self.attrs.items()])
-        if args:
-            h += ";" + args
-        if self.secure:
-            h += "; secure"
-        if self.httpOnly:
-            h += "; httpOnly"
-        return h + "\n"
-
-    @classmethod
-    def expiry_date(cls, numdays):
-        """ Returns a cookie expiry date in the required format."""
-        from datetime import date, timedelta
-        new = date.today() + timedelta(days = numdays)
-        return new.strftime("%a, %d-%b-%Y 23:59:59 GMT")
-
-    def __getitem__(self, key):
-        """Direct access to Cookie data."""
-        if key == 'name':
-            return self.name
-        elif key == 'value':
-            return self.value
-        else:
-            return self.attrs.__getitem__(key)
 
 
 class Request:
@@ -198,13 +125,6 @@ class Request:
             (headerfield, headervalue) = header_line.split(":", 1)
             self.headers[headerfield.strip()] = headervalue.strip()
 
-        # read cookies
-        if 'Cookie' in self.headers:
-            log(2, "Cookie ist: %s" % self.headers['Cookie'])
-            self.cookies = Cookie.parse(self.headers['Cookie'])
-        else:
-            self.cookies = {}
-
         # parse POST parameters
         log(1,"Methode %s" % self.method)
         if self.method == 'POST' or self.method == 'post':
@@ -225,13 +145,11 @@ class Response:
     http response data
     """
 
-    def __init__(self, conn, server):
+    def __init__(self, conn):
         self.conn = conn  # the connection to write to
         self.code = None  # status code
         self.headers = {}  # all the response headers
-        self.cookies = []
         self.body = None  # response body
-        self.server = server
 
     def add_header(self, key, value):
         """
@@ -241,10 +159,6 @@ class Response:
         :param value: it's value
         """
         self.headers[key] = value
-
-    def add_cookie(self, cookie):
-        """Add cookie to send."""
-        self.cookies.append(cookie)
 
     def set_content_type(self, content_type):
         """
@@ -256,22 +170,20 @@ class Response:
 
     def send(self, code=None, headers=None, body=""):
 
-        # method parameters overwrite/add to instance variables
-        if code:
-            self.code = code
-        if body:
-            if self.body:
-                self.body += body
-            else:
-                self.body = body
-        if headers:
-            self.headers.update(headers)
-
-    def commit(self):
+        if not headers:
+            headers = {}
 
         def w(txt):
             """Decode as UTF-8 and write to client connection"""
             self.conn.write(bytes(txt, 'UTF-8'))
+
+        # method parameters overwrite/add to instance variables
+        if code:
+            self.code = code
+        if body:
+            self.body = body
+        if headers:
+            self.headers.update(headers)
 
         # default values
         if not self.code:
@@ -289,25 +201,14 @@ class Response:
 
         w("Date: %s\n" % datetime.datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S"))
         w("Connection: close\n")
-
-        # send cookies
-        for c in self.cookies:
-            w(c.get_header())
-
-        # send other headers
         for key, value in self.headers.items():
             w("%s: %s\n" % (key, value))
-
-        # Addition: Set proper Content Length
-        if self.body and not 'Content-Length' in self.headers:
-            w("Content-Length: %d\n" % len(self.body))
-
         w("\n")  # extra leerzeile schliesst header ab
 
         if self.body:
-            if isinstance(self.body, str):  # UTF-8
+            if isinstance(self.body, str):
                 w(self.body)
-            else:  # bytes, e.g. binary data
+            else:
                 self.conn.write(self.body)
 
     def send_template(self, template, dictionary={}, code=None, headers=None):
@@ -320,10 +221,85 @@ class Response:
         :param headers: Additional headers (default: None)
         :return:
         """
-        from importlib import import_module
-        templating = import_module("server.templating.{}".format(self.server.templating))
-        body = templating.Templating.render(self.server.templating_path, template, dictionary)
-        self.send(code=code, headers=headers, body=body)  # Substitute with dictionary values/keys
+        body = self.apply_template(template, dictionary)
+        self.send(code=code, headers=headers, body=body)
+
+    def apply_template(self, template, dictionary):
+        """Applies a template and returns a string.
+
+        Templates are normale Python format strings, with one addition:
+
+        Sub-Templates (partials) can be used with this syntax:
+
+        {{path/to/template:var}}
+
+        The templates identified by the given path is then filled
+        using the dictionary in var. If var is a list (of dictionaries),
+        the template is filled in for each element in the list and then
+        concatenated.
+
+        Examples:
+
+        templates/wiki/show.html:
+        ...
+        {{templates/wiki/header.tmpl}}
+        ...
+        <ul>
+        {{templates/wiki/pagelist_entry.html:pages}}
+        <ul>
+        ...
+
+        templates/wiki/pagelist_entry.html:
+        <li><a href="{url}">{name}</a></li>
+
+        templates/wiki/header.tmpl:
+        ...
+        <h1>{title}</h1>
+        ...
+
+        Invoked as:
+        apply_template('template/wiki/show.html', {'title': 'The wiki page',
+                                                   'pages': [ {'url': '/show/seite1', 'name': 'Seite 1'},
+                                                              {'url': '/show/seite2', 'name': 'Seite 2'}]})
+
+        :param template: Template file name
+        :param dictionary: Keys and values for template placeholders
+        :return: string
+        """
+        try:
+            with open(template, "r", encoding="utf-8") as f:
+                templ = f.read()
+                # Sub-Template syntax:
+                # {{/path/to/template}}     - reuse same dictionary
+                # {{/path/to/template:var}} - use single key from dictionary (may be a list, then application is iterated)
+                #
+                # some regex magic:
+                # [\w.- ,/]+  matches paths and filenames (\w = [a-zA-Z0-9_] + other word characters üäöß...)
+                # [^\d\W]\w*  matches Python identifier (first sign = no digit, no non-word character, then \w
+                #
+                # we will have tuples with three matches: 0=entire placeholder, 1=template path, 3=variable name
+                #
+                partials = re.findall(r"({{([\w.-/]+)(:([^\d\W]\w*))?}})", templ)
+                for partial in partials:
+                    print(partial)
+                    if partial[2]:  # key given
+                        subdict = dictionary[partial[3]]
+                    else:  # no key given
+                        subdict = dictionary
+                    print(subdict)
+                    if isinstance(subdict, list):  # we have a list: concat iterated application of subtemplate
+                        sub = ""
+                        for element in subdict:
+                            sub += self.apply_template(partial[1], element)
+                    else:
+                        sub = self.apply_template(partial[1], subdict)
+                    templ = templ.replace(partial[0], sub)
+                return templ.format(**dictionary) # Substitute with dictionary values/keys
+        except KeyError as e:
+            raise StopProcessing(500, "Template Error: Key {} not given".format(e))
+        except IOError:
+            raise StopProcessing(500, "Unable to open template %s." % template)
+
 
     def send_redirect(self, url):
         self.send(302, {'Location': url})
@@ -344,21 +320,8 @@ class Webserver:
         self.port = port
         self.apps = []  # registered apps (App classes)
         self.routes = []  # registered routes (regex, handler)
-        self.middlewares = [] # registeres middlewares (handler)
         self.request = None
         self.response = None
-        self.templating = "python_templates" # default template engine
-        self.templating_path = "templates"
-        self.templating_available = ["python_templates", "jinja2", "pystache"]
-
-    def set_templating(self, templating):
-        if templating in self.templating_available:
-            self.templating = templating
-        else:
-            raise Exception("Invalid templating engine name: {}. Available are: {}.".format(templating, self.templating_available))
-
-    def set_templating_path(self, path):
-        self.templating_path = path
 
     def add_app(self, app):
         """
@@ -375,13 +338,6 @@ class Webserver:
         Register a route for request processing.
         """
         self.routes.append((route, action))
-
-    def add_middleware(self, middleware_handler):
-        """
-        Register a middleware for request preprocessing and response postprocessing.
-        :param middleware_handler: Middleware Subclass
-        """
-        self.middlewares.append(middleware_handler)
 
     def serve(self):
         """
@@ -402,16 +358,12 @@ class Webserver:
             csock, caddr = c.accept()
             conn = csock.makefile(mode='rwb', buffering=1)
             self.request = Request()
-            self.response = Response(conn, self)
+            self.response = Response(conn)
 
             if self.request.parse(conn):
                 self.request.origin = caddr[0]
                 log(2, "Request: %s\n" % self.request)
                 try:
-                    # preprocessing (middlewares)
-                    for m in self.middlewares:
-                        m.process_request(self.request, self.response)
-
                     # processing (check registered routes for actions)
                     processed = False
                     for route in self.routes:
@@ -422,24 +374,11 @@ class Webserver:
                             route[1](self.request, self.response, match)
                             processed = True
                             break
-
                     if not processed:
                         raise StopProcessing(404, "No matching route.")
 
                 except StopProcessing as spe:
                     self.response.send(code=spe.code, body=spe.reason)
-                except AlreadyProcessed:
-                    pass
-
-                # process middlewares after handling StopProcessing
-                for m in self.middlewares:
-                    m.process_response(self.response)
-
-                # actually write response to server connection
-                try:
-                    self.response.commit()
-                except ConnectionAbortedError:
-                    pass
 
             conn.close()
             csock.close()

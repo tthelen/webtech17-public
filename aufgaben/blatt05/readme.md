@@ -3,7 +3,7 @@ Uni Osnabrück, Web-Technologien 2017
 Übungsblatt 5
 =============
 
-Abgabefrist: bis Montag, 27.11.2016, 24 Uhr
+Abgabefrist: bis Dienstag, 5.12.2016, 24 Uhr
 
 
 Aufgabe 1: Erweiterung des Icon-Editors (20 Punkte):
