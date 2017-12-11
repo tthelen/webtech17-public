@@ -1,0 +1,53 @@
+{{> header}}
+
+	<h1>User Management</h1>
+
+	<table class="pure-table">
+	    <thead>
+    	    <tr>
+    	        <th>Username</th>
+    	        <th>Full name</th>
+    	        <th>Role</th>
+    	        <th>Password</th>
+    	        <th>Action</th>
+            </tr>
+        </thead>
+
+	    {{#userlist}}
+			<tr>
+			<td>{{username}}</td>
+			<td>{{{fullname}}}</td>
+			<td>{{role}}</td>
+			<td>{{password}}</td>
+			<td><a href="useradmin/delete/{{username}}">Löschen</a></td>
+			</tr>
+		{{/userlist}}
+
+	</table>
+
+    <p>&nbsp;</p>
+
+	<h2>Create new user</h2>
+
+	<form action="useradmin/create" method="post" class="pure-form pure-form-stacked">
+		<fieldset>
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" value="">
+
+            <label for="password">Username:</label>
+            <input type="text" id="password" name="password" value="">
+
+            <label for="username">Permissions:</label>
+            <select size=0 name="role">
+                <option name="user" value="user">user</option>
+                <option name="admin" value="admin">admin</option>
+            </select>
+
+            <label for="username">Full Name:</label>
+            <input type="text" id="fullname" name="fullname" size=40>
+
+            <button type="submit" value="save" class="pure-button button-primary">Create user</button>
+		</fieldset>
+	</form>
+
+{{> footer}}

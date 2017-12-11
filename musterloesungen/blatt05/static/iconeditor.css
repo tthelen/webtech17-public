@@ -1,0 +1,76 @@
+section {
+    float: left;
+    margin: 2em;
+}
+
+aside {
+}
+
+
+/* CSS classes for paint and fill cursors. Additional numbers identify the "hot spot" within the icon. */
+/* Example: 8 8 means: 8 pixels from left and 8 pixels from top */
+.mode-paint {
+        cursor: url('/static/icons8-pencil-26.png') 4 22, default;
+}
+
+.mode-fill {
+        cursor: url('/static/icons8-fill-color-26.png') 24 23, default;
+}
+
+
+.icon-table {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+
+.icon-pixel {
+    width: 1em;
+    height: 1em;
+    border: 1px solid black;
+}
+
+.color-picker-table {
+    border: 1px solid black;
+}
+
+.picker-pixel {
+    width: 0.5em;
+    height: 0.5em;
+    border: 1px solid black;
+}
+
+#preview-canvas {
+    border: 1px black solid;
+    padding: 5px;
+}
+
+.icon-list-item {
+    display: inline;
+    list-style-type: none;
+    padding-right: 10px;
+}
+
+/* Buttons for paint/fill mode */
+.commands {
+    margin-top:15px;
+}
+
+.command {
+    padding: 2px;
+    border: 2px solid black;
+    color: black;
+    background: white;
+}
+
+.command.active {
+    border-color: red;
+    background-color: lightgrey;
+}
+
+.command:hover {
+    background: grey;
+}
+
+footer {
+    clear: both;
+}
