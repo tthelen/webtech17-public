@@ -1,0 +1,59 @@
+Gefundene Lücken:
+
+Nummer 1:
+=========
+
+- Kurzbeschreibung der Lücke: Javascript-Code kann in einen Tweet eingefügt werden und kann dann für andere Angriffe
+  genutzt werden (s.u.)
+- Typ der Sicherheitslücke gem. Vorlesung: XSS
+- Maßnahmen zu Behebung: Escape-Mechanismus der Template-Engine verwenden ( {{..}} statt {{{...}}} )
+- geänderte Dateien: Template-Dateien
+
+Nummer 2:
+=========
+
+- Kurzbeschreibung der Lücke: Gelangt der Angreifer an eine Session-ID (z.B. über XSS, s. 1.), kann er anschließend
+  die laufende Session übernehmen, d.h. einen eigenen Client (Browser oder automatisiert) mit dem Session-Cookie
+  ausstatten und als der angegriffene Nutzer agieren.
+- Typ der Sicherheitslücke gem. Vorlesung: Session-Hijacking
+- Maßnahmen zu Behebung: XSS-Lücke schließen (s. 1), außerdem Session-Cookie mit httponly-Flag versehen
+- geänderte Dateien: session.py
+
+Nummer 3:
+=========
+
+- Kurzbeschreibung der Lücke: Nutzer können dazu gebracht werden, Aktionen auslösen, die sie nicht beabsichtigen. Beispiele:
+  Post von Tweets mit Beleidigungen, Schadcode (Wurm); für Admins: Löschen/Anlegen von Nutzern
+- Typ der Sicherheitslücke gem. Vorlesung: Cross Site Request Forgery (CSRF)
+- Maßnahmen zu Behebung: CSRF-Middleware (s. Aufgabe 2)
+
+Nummer 4:
+=========
+
+- Kurzbeschreibung der Lücke: Die Admin-Aktionen zum Anlegen und Löschen von Nutzern sind nicht hinreichend abgesichert.
+- Typ der Sicherheitslücke gem. Vorlesung: kein expliziter Name - mangelnde Rechteabsicherung
+- Maßnahmen zu Behebung: Einfügen folgender Zeile in usermanagement.py#delete und #create:
+        if not request.session['user'].is_admin: raise StopProcessing(400, "You are not an admin!")
+- geänderte Dateien: server/apps/usermanagement.py
+
+Nummer 5:
+=========
+
+- Kurzbeschreibung der Lücke: SQL-Parameter werden nicht escaped, so dass an verschiedenen Stellen unerwünschte Queries
+  konstruiert werden können. Am kritischsten: Wenn als Passwort der String ' or 1-- benutzt wird, gelingt das Login
+  auch ohne Wissen des Passwortes.
+- Typ der Sicherheitslücke gem. Vorlesung: SQL-Injection
+- Maßnahmen zu Behebung:
+  1. Nur in Ausnahmefällen executescript verwenden (wenn man sicher ist, dass man mehrere SQL-Kommandos absetzen will.
+  2. Immer und bei allen Queries den Escape-Mechanismus der Template-Engine benutzen
+- geänderte Dateien: server/usermodel.py
+
+Nummer 6:
+=========
+- Kurzbeschreibung der Lücke: In der Tweet-Datei wird ; als Trennzeichen genutzt und gespeicherte Nachrichten darauf
+  nicht gefiltert. Aufgrund des Aufbaus der Datei können somit durch präparierte Nachrichten falsche Autoren- und
+  Zeitangaben gemacht werden.
+- Typ der Sicherheitslücke gem. Vorlesung: Special Character Injection
+- Maßnahmen zu Behebung:
+  - Ersetzen des zu schützenden Zeichens durch eine Ersatzdarstellung / Escapce-Zeichen
+- geänderte Dateien: minitwitter.py

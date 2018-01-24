@@ -1,0 +1,39 @@
+{{> header}}
+
+<h1 class="content-subhead">The Tweets</h1>
+
+<div id="thetweets">
+</div>
+
+<script>
+function load(sel, url) {
+    document.querySelector(sel).innerHTML="<div style='padding:2em;'><img src='/static/ajax-loader.gif'></div>";
+    oReq = new XMLHttpRequest();
+    oReq.addEventListener("load", function () {
+        document.querySelector(sel).innerHTML = this.responseText;
+    });
+    oReq.open("GET", url);
+    oReq.send();
+}
+
+document.addEventListener("DOMContentLoaded", function(event) {
+    load("#thetweets", "tweets");
+
+    // we register this event at body because the form might not be available yet
+    // event.target is the element that originally triggered the event, in case
+    // of our form, this is .. the form.
+    document.querySelector("body").addEventListener("submit", function (event) {
+        if (event.target.id == 'theform') {
+            xhr = new XMLHttpRequest();
+            xhr.addEventListener("load", function () {
+                load("#thetweets", "tweets");
+            });
+            xhr.open("POST", "save");
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            xhr.send("status="+encodeURIComponent(document.querySelector("#status").value));
+            event.preventDefault();
+        }
+    });
+});
+</script>
+{{> footer}}
